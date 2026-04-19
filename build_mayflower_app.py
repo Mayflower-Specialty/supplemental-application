@@ -19,6 +19,17 @@ from reportlab.graphics import renderPDF
 import os
 
 # ---------------------------------------------------------------------------
+# Register custom fonts
+# ---------------------------------------------------------------------------
+# Register Libre Baskerville Regular for "MAYFLOWER" text
+pdfmetrics.registerFont(TTFont('LibreBaskerville-Regular',
+                               os.path.join(os.path.dirname(__file__), "assets", "LibreBaskerville-Regular.ttf")))
+
+# Register Montserrat Light for "SPECIALTY" text
+pdfmetrics.registerFont(TTFont('Montserrat-Light',
+                               os.path.join(os.path.dirname(__file__), "assets", "Montserrat-Light.ttf")))
+
+# ---------------------------------------------------------------------------
 # Brand palette
 # ---------------------------------------------------------------------------
 NAVY = colors.HexColor("#0F3556")          # headers / chrome
@@ -199,6 +210,26 @@ class FieldRow(Flowable):
         c.setStrokeColor(RULE)
         c.setLineWidth(0.5)
         c.line(0, 2, self.width, 2)
+
+
+class SignatureFieldRow(Flowable):
+    """A labeled blank field for signatures with more spacing between label and underline."""
+    def __init__(self, label, width):
+        super().__init__()
+        self.label = label
+        self.width = width
+        self.height = 36  # Increased to accommodate 28 points of spacing
+
+    def wrap(self, aw, ah):
+        return (self.width, self.height)
+
+    def draw(self):
+        c = self.canv
+        c.setFont("Helvetica", 8.7)
+        c.drawString(0, self.height - 8, self.label)  # Label at 28 from bottom
+        c.setStrokeColor(RULE)
+        c.setLineWidth(0.5)
+        c.line(0, 2, self.width, 2)  # Line at 2, giving 26 points of space
 
 
 class AnswerBox(Flowable):
@@ -389,11 +420,11 @@ def draw_logo(c, x, y):
     # The logo mark is 50x50 points for better visibility
     c.drawImage(logo_path, x, y, width=50, height=50, preserveAspectRatio=True, mask='auto')
 
-    # Wordmark - using serif font to match brand style
-    c.setFont("Times-Bold", 16)
+    # Wordmark - using custom fonts (Libre Baskerville Regular and Montserrat Light)
+    c.setFont("LibreBaskerville-Regular", 16)
     c.setFillColor(NAVY_DARK)
     c.drawString(x + 54, y + 21, "MAYFLOWER")
-    c.setFont("Times-Roman", 9)
+    c.setFont("Montserrat-Light", 9)
     c.setFillColor(NAVY_DARK)
     c.drawString(x + 54, y + 9, "SPECIALTY")
 
@@ -1272,7 +1303,7 @@ story.append(options_grid([
 story.append(Spacer(1, 6))
 
 # Q6 (Yes/No on right)
-story.extend(question(6, "Regulatory inquiries, investigations, consent decrees, or enforcement actions relating to AI or algorithmic systems in the past 5 years.",
+story.extend(question(6, "Regulatory inquiries, investigations, consent decrees, or enforcement actions relating to AI or algorithmic systems in the past 3 years.",
                       helper="Include inquiries that did not result in action. Include inquiries into affiliates where the Applicant's AI systems were the subject.",
                       yes_no=True))
 story.append(Spacer(1, 4))
@@ -1286,7 +1317,7 @@ story.append(Spacer(1, 8))
 story.append(PageBreak())
 story.append(SectionHeader("VIII.  CLAIMS AND LOSS HISTORY"))
 story.append(Spacer(1, 3))
-story.append(Paragraph("<i>Provide complete information for the prior five (5) years. Attach loss runs if available.</i>", INSTR_ITAL))
+story.append(Paragraph("<i>Provide complete information for the prior three (3) years. Attach loss runs if available.</i>", INSTR_ITAL))
 story.append(Spacer(1, 6))
 
 # ============================================================
@@ -1294,13 +1325,13 @@ story.append(Spacer(1, 6))
 # ============================================================
 
 # Q1 (Yes/No)
-story.extend(question(1, "Any claim, suit, regulatory action, or complaint arising from an AI or algorithmic system in the past five years?", yes_no=True))
+story.extend(question(1, "Any claim, suit, regulatory action, or complaint arising from an AI or algorithmic system in the past three years?", yes_no=True))
 story.append(Paragraph("<b>1a.</b>  If yes, provide details (date, nature, status, amount paid or reserved).", QUESTION))
 story.append(AnswerBox(CONTENT_W, lines=2))
 story.append(Spacer(1, 6))
 
 # Q2
-story.extend(question(2, "Any D&amp;O, EPL, or E&amp;O claim or suit in the past five years, regardless of AI involvement?", yes_no=True))
+story.extend(question(2, "Any D&amp;O, EPL, or E&amp;O claim or suit in the past three years, regardless of AI involvement?", yes_no=True))
 story.append(Paragraph("<b>2a.</b>  If yes, provide details (date, line, nature, status, amount).", QUESTION))
 story.append(AnswerBox(CONTENT_W, lines=2))
 story.append(Spacer(1, 6))
@@ -1361,7 +1392,7 @@ story.append(Spacer(1, 6))
 doc_rows = [
     ["Document", "Required", "Enclosed"],
     ["Completed ACORD Application(s) for applicable coverage lines", "*", ""],
-    ["Five (5) years of loss runs for D&O, EPL, and E&O", "*", ""],
+    ["Three (3) years of loss runs for D&O, EPL, and E&O", "*", ""],
     ["Most recent annual financial statements or audited financials", "*", ""],
     ["AI Governance Policy or Responsible AI Framework", "*", ""],
     ["AI System Inventory (systems, use cases, data types)", "*", ""],
@@ -1433,14 +1464,14 @@ story.append(Paragraph(
     "or General Counsel of the Applicant.</b>", WARRANTY_BOLD))
 story.append(Spacer(1, 14))
 
-# Signature blocks: two columns of FieldRows
+# Signature blocks: two columns of SignatureFieldRows
 sig_widths = [CONTENT_W * 0.55, CONTENT_W * 0.45]
 sig_grid = Table([
-    [FieldRow("Signature of Authorized Representative", sig_widths[0] - 12), FieldRow("Date", sig_widths[1] - 12)],
+    [SignatureFieldRow("Signature of Authorized Representative", sig_widths[0] - 12), SignatureFieldRow("Date", sig_widths[1] - 12)],
     [Spacer(1, 8), Spacer(1, 8)],
-    [FieldRow("Printed Name", sig_widths[0] - 12), FieldRow("Title", sig_widths[1] - 12)],
+    [SignatureFieldRow("Printed Name", sig_widths[0] - 12), SignatureFieldRow("Title", sig_widths[1] - 12)],
     [Spacer(1, 8), Spacer(1, 8)],
-    [FieldRow("Organization", sig_widths[0] - 12), FieldRow("Email", sig_widths[1] - 12)],
+    [SignatureFieldRow("Organization", sig_widths[0] - 12), SignatureFieldRow("Email", sig_widths[1] - 12)],
 ], colWidths=sig_widths)
 sig_grid.setStyle(TableStyle([
     ("LEFTPADDING", (0, 0), (-1, -1), 0),
