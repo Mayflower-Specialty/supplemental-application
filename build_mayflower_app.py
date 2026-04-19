@@ -10,26 +10,26 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY
 from reportlab.platypus import (
     BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, Table, TableStyle,
-    KeepTogether, PageBreak, HRFlowable, Flowable
+    KeepTogether, PageBreak, HRFlowable, Flowable, Image
 )
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.shapes import Drawing, Polygon, Line
 from reportlab.graphics import renderPDF
+import os
 
 # ---------------------------------------------------------------------------
 # Brand palette
 # ---------------------------------------------------------------------------
 NAVY = colors.HexColor("#0F3556")          # headers / chrome
 NAVY_DARK = colors.HexColor("#0A2840")     # logo
+SECTION_HEADER_BG = colors.HexColor("#004D6B")  # section header background - darker teal/navy
 ACCENT = colors.HexColor("#1F5F8B")        # subtitle / question numbers / sail
 TEAL = colors.HexColor("#2E8FB5")          # field labels
 RULE = colors.HexColor("#9FB6C8")          # thin underlines on fields
 NOTICE_BG = colors.HexColor("#E8EEF3")     # notice box bg
 NOTICE_BORDER = colors.HexColor("#B8C8D6")
-APPETITE_BG = colors.HexColor("#FAF1E6")   # appetite warning bg
-APPETITE_BORDER = colors.HexColor("#E0CFB8")
-LIGHT_FIELD_BG = colors.HexColor("#F2F5F8")  # multi-line answer boxes
+LIGHT_FIELD_BG = colors.HexColor("#E8F0F8")  # multi-line answer boxes
 TABLE_HEAD_BG = colors.HexColor("#E8EEF3")
 
 PAGE_W, PAGE_H = LETTER
@@ -84,11 +84,6 @@ FIELD_LABEL = ParagraphStyle(
     "FieldLabel", parent=NORMAL, fontSize=7.6, leading=9.5, textColor=TEAL,
 )
 
-APPETITE = ParagraphStyle(
-    "Appetite", parent=NORMAL, fontName="Helvetica-Oblique", fontSize=8,
-    leading=10.5, textColor=colors.HexColor("#5a4a30"),
-)
-
 WARRANTY_BODY = ParagraphStyle(
     "WarrantyBody", parent=NORMAL, fontSize=8.7, leading=11.5, spaceAfter=5,
 )
@@ -136,10 +131,10 @@ class SectionHeader(Flowable):
 
     def draw(self):
         c = self.canv
-        c.setFillColor(NAVY)
+        c.setFillColor(SECTION_HEADER_BG)
         c.rect(0, 0, self.width, self.height, stroke=0, fill=1)
         c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 11)
+        c.setFont("Helvetica", 11)
         c.drawString(8, self.height/2 - 3.6, self.text)
 
 
@@ -192,19 +187,18 @@ class FieldRow(Flowable):
         super().__init__()
         self.label = label
         self.width = width
-        self.height = 22
+        self.height = 27
 
     def wrap(self, aw, ah):
         return (self.width, self.height)
 
     def draw(self):
         c = self.canv
-        c.setFont("Helvetica", 7.6)
-        c.setFillColor(TEAL)
-        c.drawString(0, self.height - 9, self.label)
+        c.setFont("Helvetica", 8.7)
+        c.drawString(0, self.height - 8, self.label)
         c.setStrokeColor(RULE)
         c.setLineWidth(0.5)
-        c.line(0, 1.5, self.width, 1.5)
+        c.line(0, 2, self.width, 2)
 
 
 class AnswerBox(Flowable):
@@ -382,63 +376,33 @@ def notice_box(text):
     return t
 
 
-def appetite_box(text):
-    p = Paragraph(f'<i>{text}</i>', APPETITE)
-    t = Table([[p]], colWidths=[CONTENT_W])
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), APPETITE_BG),
-        ("LINEBEFORE", (0, 0), (0, -1), 2.5, ACCENT),
-        ("LEFTPADDING", (0, 0), (-1, -1), 10),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-        ("TOPPADDING", (0, 0), (-1, -1), 6),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-    ]))
-    return t
-
-
 # ---------------------------------------------------------------------------
 # Page chrome: header (logo + title), footer
 # ---------------------------------------------------------------------------
 
 def draw_logo(c, x, y):
-    """Draw the Mayflower sail-on-wave logo mark, then the wordmark."""
-    # Sail (a stylized triangular sail shape) in dark navy
-    c.saveState()
-    c.translate(x, y)
-    # Sail shape (triangle leaning right) — a curved triangle approximated with a path
-    p = c.beginPath()
-    p.moveTo(0, 0)
-    p.lineTo(0, 28)
-    p.curveTo(6, 22, 16, 14, 22, 0)
-    p.lineTo(0, 0)
-    c.setFillColor(NAVY_DARK)
-    c.setStrokeColor(NAVY_DARK)
-    c.drawPath(p, stroke=0, fill=1)
-    # Mast/wave: a thin horizontal wave under the sail
-    c.setStrokeColor(NAVY_DARK)
-    c.setLineWidth(1.6)
-    wave = c.beginPath()
-    wave.moveTo(-3, -2)
-    wave.curveTo(4, -6, 12, 2, 22, -2)
-    wave.curveTo(28, -5, 32, -2, 35, -3)
-    c.drawPath(wave, stroke=1, fill=0)
-    c.restoreState()
+    """Draw the Mayflower sail-on-wave logo mark using the logo image file, then the wordmark."""
+    # Get the path to the logo image file
+    logo_path = os.path.join(os.path.dirname(__file__), "assets", "Mayflower_LI_Badge_Logomark_RB251031-01.png")
 
-    # Wordmark
-    c.setFont("Helvetica-Bold", 13)
+    # Draw the logo image
+    # The logo mark is 50x50 points for better visibility
+    c.drawImage(logo_path, x, y, width=50, height=50, preserveAspectRatio=True, mask='auto')
+
+    # Wordmark - using serif font to match brand style
+    c.setFont("Times-Bold", 16)
     c.setFillColor(NAVY_DARK)
-    c.drawString(x + 44, y + 12, "MAYFLOWER")
-    c.setFont("Helvetica", 7)
-    c.setFillColor(colors.HexColor("#6a7a88"))
-    # Manually space-out the letters of "SPECIALTY" since setCharSpace varies by version
-    c.drawString(x + 44, y + 2, "S P E C I A L T Y")
+    c.drawString(x + 54, y + 21, "MAYFLOWER")
+    c.setFont("Times-Roman", 9)
+    c.setFillColor(NAVY_DARK)
+    c.drawString(x + 54, y + 9, "SPECIALTY")
 
 
 def page_header_footer(canvas, doc):
     canvas.saveState()
     # --- Header ---
-    # Logo at top-left
-    draw_logo(canvas, LEFT_MARGIN, PAGE_H - 0.6 * inch - 14)
+    # Logo at top-left - positioned closer to left edge
+    draw_logo(canvas, LEFT_MARGIN - 5, PAGE_H - 0.6 * inch - 19)
     # Right-side title
     canvas.setFont("Helvetica-Bold", 13)
     canvas.setFillColor(NAVY)
@@ -462,7 +426,7 @@ def page_header_footer(canvas, doc):
     canvas.line(LEFT_MARGIN, footer_y + 18, PAGE_W - RIGHT_MARGIN, footer_y + 18)
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(colors.HexColor("#4a5560"))
-    canvas.drawString(LEFT_MARGIN, footer_y + 5, "Mayflower Specialty, Ltd.    New York, NY    mayflowerspecialty.com")
+    canvas.drawString(LEFT_MARGIN, footer_y + 5, "© 2026 Mayflower Specialty, Ltd. All rights reserved. Unauthorized reproduction, adaptation, or distribution is prohibited.")
     canvas.setFont("Helvetica-Bold", 8)
     canvas.setFillColor(NAVY)
     canvas.drawRightString(PAGE_W - RIGHT_MARGIN, footer_y + 5, f"CONFIDENTIAL  |  Page {doc.page}")
@@ -478,6 +442,11 @@ story = []
 # ============================================================
 # PAGE 1 — Title block + Section I (Applicant Information)
 # ============================================================
+
+story.append(notice_box(
+    "PROPRIETARY AND CONFIDENTIAL. This Application and all questions, frameworks, and scoring criteria contained herein are the intellectual property of Mayflower Specialty, Ltd., protected by applicable copyright law. This form is licensed solely for use by the named Applicant to obtain coverage from Mayflower Specialty, Ltd. Any reproduction, adaptation, distribution, or use of this form or any portion thereof, including for developing competing insurance products or underwriting tools, is strictly prohibited without written consent of Mayflower Specialty, Ltd."
+))
+story.append(Spacer(1, 6))
 
 story.append(notice_box(
     "NOTICE: This is an application for a Claims Made and Reported policy. The policy applied for covers only those Claims first made against an Insured during "
@@ -521,40 +490,40 @@ story.append(Spacer(1, 4))
 story.append(fields_row([("7. Industry / Sector", 2), ("8. NAICS Code", 1), ("9. Year Founded", 1)]))
 story.append(Spacer(1, 4))
 story.append(fields_row([("10. Annual Revenue (USD)", 1), ("11. Total Employees", 1), ("12. Number of Locations", 1)]))
-story.append(Spacer(1, 10))
+story.append(Spacer(1, 4))
 
-# 13. Ownership Structure
-story.append(Paragraph("<b>13.</b>  Ownership Structure", QUESTION))
+story.append(fields_row([("13. Requested Policy Period", 1), ("14. Requested Aggregate Limit", 1)]))
+story.append(Spacer(1, 4))
+
+story.append(fields_row([("15. Contact Name and Title", 1), ("16. Contact Email and Phone", 1)]))
+story.append(Spacer(1, 4))
+
+# 17. Ownership Structure
+story.append(Paragraph("<b>17.</b>  Ownership Structure", QUESTION))
 story.append(options_grid([
     "Privately Held", "Publicly Held", "Not-for-Profit", "Other",
 ], cols=4))
 story.append(Spacer(1, 6))
 
-# 14. Business Type
-story.append(Paragraph("<b>14.</b>  Business Type", QUESTION))
+
+# 18. Business Type
+story.append(Paragraph("<b>18.</b>  Business Type", QUESTION))
 story.append(options_grid([
     "Corporation", "LLC", "Partnership", "Sole Proprietorship",
 ], cols=4))
 story.append(Spacer(1, 6))
 
-story.append(fields_row([("15. Requested Policy Period", 1), ("16. Requested Aggregate Limit", 1)]))
-story.append(Spacer(1, 8))
-
-# 17. Geographic Scope
-story.append(Paragraph("<b>17.</b>  Geographic Scope of AI Operations", QUESTION))
+# 19. Geographic Scope
+story.append(Paragraph("<b>19.</b>  Geographic Scope of AI Operations", QUESTION))
 story.append(options_grid([
     "US Only", "US and EU / UK", "Global",
 ], cols=3))
-story.append(Spacer(1, 6))
-
-story.append(fields_row([("18. Contact Name and Title", 1), ("19. Contact Email and Phone", 1)]))
-
-story.append(PageBreak())
 
 # ============================================================
 # PAGE 2 — Section II (AI Systems Overview)  questions 1–5b
 # ============================================================
 
+story.append(PageBreak())
 story.append(SectionHeader("II.  AI SYSTEMS OVERVIEW"))
 story.append(Spacer(1, 3))
 story.append(Paragraph(
@@ -575,7 +544,7 @@ story.append(Spacer(1, 6))
 
 # Q2
 story.extend(question(2, "Provide a schedule of each production AI system with the following information.",
-                      helper="A CSV or spreadsheet attachment satisfies this question. The schedule must cover every system counted in Question 1 and will be "
+                      helper="A spreadsheet attachment satisfies this question. The schedule must cover every system counted in Question 1 and will be "
                              "incorporated by reference into the policy."))
 story.append(Paragraph(
     "<b>(a)</b> system name or identifier  <b>(b)</b> business function served  <b>(c)</b> technology type (NLP, computer vision, tabular ML, generative LLM, "
@@ -723,18 +692,17 @@ story.append(options_grid([
 ], cols=2))
 story.append(Spacer(1, 6))
 
-story.append(appetite_box(
+story.append(notice_box(
     "Applications involving autonomous weapons, social scoring, mass surveillance, biometric identification in public spaces, real-time "
     "emotion inference in workplace or educational settings, or undisclosed deepfake generation are outside Mayflower Specialty's "
     "underwriting appetite. Predictive policing and criminal sentencing applications are considered only under bespoke terms."
 ))
 
-story.append(PageBreak())
-
 # ============================================================
 # PAGE 4 — Section III (Governance) questions 1–7
 # ============================================================
 
+story.append(PageBreak())
 story.append(SectionHeader("III.  AI GOVERNANCE"))
 story.append(Spacer(1, 3))
 story.append(Paragraph("<i>Controls over the policies, committees, accountabilities, and procedures that govern the Applicant's AI program.</i>", INSTR_ITAL))
@@ -744,13 +712,13 @@ story.append(Spacer(1, 6))
 story.extend(question(1, "Has the Applicant adopted a formal AI governance framework?"))
 story.append(options_grid([
     ("Yes, fully implemented", "across all production AI systems"),
-], cols=1, bold=True))
+], cols=1))
 story.append(options_grid([
     ("Partially implemented", "implemented for some systems or in progress"),
-], cols=1, bold=True))
+], cols=1))
 story.append(options_grid([
     ("No", "no formal framework"),
-], cols=1, bold=True))
+], cols=1))
 story.append(Spacer(1, 6))
 
 # Q2
@@ -775,7 +743,7 @@ story.extend(question(3, "Dedicated AI oversight body.",
                       helper="A body that has not met in the past 12 months should be reported as Ad-hoc regardless of its charter."))
 story.append(options_grid([
     ("Yes", "dedicated AI committee with written charter"),
-    ("Integrated in ERM", "AI oversight embedded in enterprise risk committee"),
+    ("Integrated in ERM", "AI oversight embedded in enterprise risk"),
     ("Ad-hoc", "no standing body; AI issues addressed as they arise"),
     ("No", "no oversight structure"),
 ], cols=2, bold=True))
@@ -921,12 +889,11 @@ story.append(options_grid([
     "AI legal or compliance lead",
 ], cols=2))
 
-story.append(PageBreak())
-
 # ============================================================
 # PAGE 6 — Section IV (Data Governance) questions 1–6
 # ============================================================
 
+story.append(PageBreak())
 story.append(SectionHeader("IV.  DATA GOVERNANCE"))
 story.append(Spacer(1, 3))
 story.append(Paragraph("<i>Controls over data used to train, validate, fine-tune, and operate AI systems.</i>", INSTR_ITAL))
@@ -1051,12 +1018,11 @@ _q8_block.append(options_grid([
 ], cols=2, bold=True))
 story.append(KeepTogether(_q8_block))
 
-story.append(PageBreak())
-
 # ============================================================
 # PAGE 8 — Section V (Operations) Q1-7 + Section VI start
 # ============================================================
 
+story.append(PageBreak())
 story.append(SectionHeader("V.  SYSTEM OPERATIONS AND MONITORING"))
 story.append(Spacer(1, 3))
 story.append(Paragraph("<i>Operational profile of the Applicant's AI infrastructure, including criticality, availability, monitoring, and model lifecycle management.</i>", INSTR_ITAL))
@@ -1140,6 +1106,7 @@ story.append(options_grid([
 story.append(Spacer(1, 8))
 
 # --- Section VI start ---
+story.append(PageBreak())
 story.append(SectionHeader("VI.  AI INCIDENT RESPONSE"))
 story.append(Spacer(1, 3))
 story.append(Paragraph("<i>Capability to detect, contain, communicate, and learn from AI-specific incidents, including model failures, biased outcomes, hallucinations, prompt injection, training-data poisoning, and inappropriate generative output.</i>", INSTR_ITAL))
@@ -1227,12 +1194,11 @@ story.append(Spacer(1, 4))
 story.append(Paragraph("<b>7a.</b>  If 1 or more, briefly describe the nature and resolution of the most material incident or near-miss.", QUESTION))
 story.append(AnswerBox(CONTENT_W, lines=2))
 
-story.append(PageBreak())
-
 # ============================================================
 # PAGE 10 — Section VII + Section VIII start
 # ============================================================
 
+story.append(PageBreak())
 story.append(SectionHeader("VII.  REGULATORY ENVIRONMENT AND COMPLIANCE"))
 story.append(Spacer(1, 6))
 
@@ -1317,11 +1283,11 @@ story.append(AnswerBox(CONTENT_W, lines=2))
 story.append(Spacer(1, 8))
 
 # Section VIII begins on page 10
+story.append(PageBreak())
 story.append(SectionHeader("VIII.  CLAIMS AND LOSS HISTORY"))
 story.append(Spacer(1, 3))
 story.append(Paragraph("<i>Provide complete information for the prior five (5) years. Attach loss runs if available.</i>", INSTR_ITAL))
-
-story.append(PageBreak())
+story.append(Spacer(1, 6))
 
 # ============================================================
 # PAGE 11 — Section VIII questions 1-4
@@ -1349,8 +1315,6 @@ story.append(Spacer(1, 6))
 story.extend(question(4, "Has any insurer declined, cancelled, or non-renewed coverage for the Applicant?", yes_no=True))
 story.append(Paragraph("<b>4a.</b>  If yes, provide details.", QUESTION))
 story.append(AnswerBox(CONTENT_W, lines=2))
-
-story.append(PageBreak())
 
 # ============================================================
 # PAGE 12 — Section IX (Insurance grid) + Section X (Documentation table)
@@ -1388,6 +1352,7 @@ story.append(Spacer(1, 8))
 story.append(fields_row([("Proposed Retroactive Date", 1), ("Current Carrier Expiration Date", 1)]))
 story.append(Spacer(1, 12))
 
+story.append(PageBreak())
 story.append(SectionHeader("X.  REQUIRED DOCUMENTATION"))
 story.append(Spacer(1, 3))
 story.append(Paragraph("<i>Items marked with an asterisk (*) are required. All others are recommended and may improve terms.</i>", INSTR_ITAL))
@@ -1429,12 +1394,11 @@ doc_table.setStyle(TableStyle([
 ]))
 story.append(doc_table)
 
-story.append(PageBreak())
-
 # ============================================================
 # PAGE 13 — Section XI Representation and Warranty
 # ============================================================
 
+story.append(PageBreak())
 story.append(SectionHeader("XI.  APPLICANT REPRESENTATION AND WARRANTY"))
 story.append(Spacer(1, 6))
 
@@ -1487,12 +1451,11 @@ sig_grid.setStyle(TableStyle([
 ]))
 story.append(sig_grid)
 
-story.append(PageBreak())
-
 # ============================================================
 # PAGE 14 — Section XII Fraud Warnings
 # ============================================================
 
+story.append(PageBreak())
 story.append(SectionHeader("XII.  FRAUD WARNINGS"))
 story.append(Spacer(1, 3))
 story.append(Paragraph("<i>Where applicable under the laws of your state.</i>", INSTR_ITAL))
@@ -1560,7 +1523,7 @@ story.append(Paragraph("End of Application", END_APP))
 # Build doc
 # ---------------------------------------------------------------------------
 
-OUT = "outputs/Mayflower_AI_Supplemental_Application_v3.pdf"
+OUT = "pdfs/Mayflower_AI_Liability_Supplemental_Application_v4.pdf"
 
 doc = BaseDocTemplate(
     OUT,
