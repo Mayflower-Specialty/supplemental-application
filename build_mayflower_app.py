@@ -551,7 +551,7 @@ story.append(options_grid([
 ], cols=3))
 
 # ============================================================
-# PAGE 2 — Section II (AI Systems Overview)  questions 1–5b
+# PAGE 2 — Section II (AI Systems Overview)  questions 1–8a
 # ============================================================
 
 story.append(PageBreak())
@@ -616,7 +616,35 @@ story.append(options_grid([
 story.append(Spacer(1, 6))
 
 # Q5
-story.extend(question(5, "Generative AI use in any customer-facing, employee-facing, or decision-support application."))
+story.extend(question(5, "AI exposure sizing. Complete for the aggregate of all production AI systems."))
+story.append(Paragraph("<b>(a)</b> Approximate number of AI-driven decisions, predictions, or generations served per year:", QUESTION))
+story.append(FieldRow("", CONTENT_W))
+story.append(Spacer(1, 2))
+story.append(Paragraph("<b>(b)</b> Approximate number of distinct individuals whose rights, employment, credit, insurance, healthcare, housing, or safety are affected by an AI decision per year:", QUESTION))
+story.append(FieldRow("", CONTENT_W))
+story.append(Spacer(1, 2))
+story.append(Paragraph("<b>(c)</b> Annual revenue derived from AI-enabled products or services (USD):", QUESTION))
+story.append(FieldRow("", CONTENT_W))
+story.append(Spacer(1, 2))
+story.append(Paragraph("<b>(d)</b> Percentage of AI usage that is:", QUESTION))
+story.append(fields_row([("customer-facing (%)", 1), ("business-to-business (%)", 1), ("internal-only (%)", 1)]))
+story.append(Spacer(1, 6))
+
+# Q6
+story.extend(question(6, "AI deployment model and commercial posture.",
+                      helper="Select all that describe the Applicant's role with respect to AI systems. A single Applicant may be both a provider and a user."))
+story.append(options_grid([
+    ("AI User", "the Applicant consumes AI for its own internal or operational use"),
+    ("AI Provider, embedded", "the Applicant incorporates AI into products or services sold to customers"),
+    ("AI Provider, standalone", "the Applicant sells AI models, platforms, or APIs as a primary product"),
+    ("AI Developer, foundation", "the Applicant trains or releases foundation models"),
+    ("AI Integrator", "the Applicant deploys third-party AI into customer environments under its own brand or responsibility"),
+], cols=1, bold=True))
+story.append(Spacer(1, 8))
+
+
+# Q7
+story.extend(question(7, "Generative AI use in any customer-facing, employee-facing, or decision-support application."))
 story.append(options_grid([
     ("No", "generative AI not used"),
     ("Yes, internal only", "employees only, not customer-facing"),
@@ -625,14 +653,14 @@ story.append(options_grid([
 ], cols=2, bold=True))
 story.append(Spacer(1, 4))
 
-# Q5a
-story.append(Paragraph("<b>5a.</b>  If yes, list foundation models and hosting arrangement.", QUESTION))
+# Q7a
+story.append(Paragraph("<b>7a.</b>  If yes, list foundation models and hosting arrangement.", QUESTION))
 story.append(Paragraph("<i>List each foundation model by name and version, and indicate commercial API, hyperscaler private deployment, or self-hosted open weights.</i>", QHELP))
 story.append(AnswerBox(CONTENT_W, lines=2))
 story.append(Spacer(1, 6))
 
-# Q5b
-story.append(Paragraph("<b>5b.</b>  Guardrails applied to generative AI in production.", QUESTION))
+# Q7b
+story.append(Paragraph("<b>7b.</b>  Guardrails applied to generative AI in production.", QUESTION))
 story.append(options_grid([
     "Input validation and prompt filtering",
     "Output content moderation (toxicity, PII, legal flags)",
@@ -644,15 +672,10 @@ story.append(options_grid([
     "Human review required before customer-visible output",
     "None of the above",
 ], cols=2))
+story.append(Spacer(1, 6))
 
-story.append(PageBreak())
-
-# ============================================================
-# PAGE 3 — Section II questions 6–9
-# ============================================================
-
-# Q6
-story.extend(question(6, "Reliance on third-party AI components, APIs, or foundation models.",
+# Q8
+story.extend(question(8, "Reliance on third-party AI components, APIs, or foundation models.",
                       helper="Select the option that describes the most critical third-party dependency. Critical means a failure or breach of the component would materially "
                              "impair the Applicant's service."))
 story.append(options_grid([
@@ -667,34 +690,39 @@ story.append(options_grid([
 story.append(options_grid([
     ("Critical, unsupported or open-source", "no vendor SLA; community support only"),
 ], cols=1, bold=True))
-story.append(Spacer(1, 6))
+story.append(Spacer(1, 4))
 
-# Q6a
-story.append(Paragraph("<b>6a.</b>  For each critical third-party AI component, confirm the Applicant has.", QUESTION))
+# Q8a
+story.append(Paragraph("<b>8a.</b>  For each critical third-party AI component, confirm the Applicant has.", QUESTION))
 story.append(options_grid([
-    "A written contract with uptime and support terms",
-    "A security attestation (SOC 2 Type II, ISO 27001, or equivalent) on file",
-    "A data-processing agreement covering all data shared with the vendor",
-    "Indemnification for IP infringement arising from model output",
-    "Indemnification for bias, defamation, or harm arising from model output",
-    "A documented fallback plan if the component becomes unavailable",
+    "Written contract with uptime and support terms",
+    "Security attestation on file (SOC 2, ISO 27001, or equivalent)",
+    "Data-processing agreement for vendor data sharing",
+    "IP infringement indemnification for model output",
+    "Bias, defamation, or harm indemnification",
+    "Documented fallback plan for component unavailability",
 ], cols=2))
-story.append(Spacer(1, 6))
 
-# Q7 (Yes/No on the right)
-story.extend(question(7, "Does any AI system operate fully autonomously without real-time human intervention capability?",
+story.append(PageBreak())
+
+# ============================================================
+# PAGE 3 — Section II questions 9–11
+# ============================================================
+
+# Q9 (Yes/No on the right)
+story.extend(question(9, "Does any AI system operate fully autonomously without real-time human intervention capability?",
                       helper="Intervention capability means a designated human can halt, reverse, or modify an AI decision before its effect becomes "
                              "binding on a third party.",
                       yes_no=True))
 story.append(Spacer(1, 4))
 
-# Q7a
-story.append(Paragraph("<b>7a.</b>  If yes, describe each such system, its function, automated safeguards, and the kill-switch or circuit-breaker procedure.", QUESTION))
+# Q9a
+story.append(Paragraph("<b>9a.</b>  If yes, describe each such system, its function, automated safeguards, and the kill-switch or circuit-breaker procedure.", QUESTION))
 story.append(AnswerBox(CONTENT_W, lines=3))
 story.append(Spacer(1, 6))
 
-# Q8
-story.extend(question(8, "Agentic AI deployments.",
+# Q10
+story.extend(question(10, "Agentic AI deployments.",
                       helper="An agent is an AI system that plans multi-step actions, invokes external tools or APIs, and operates across sessions without per-step human "
                              "approval. Report agents separately from single-turn chatbots or retrieval systems."))
 story.append(options_grid([
@@ -705,13 +733,13 @@ story.append(options_grid([
 ], cols=2, bold=True))
 story.append(Spacer(1, 6))
 
-# Q8a
-story.append(Paragraph("<b>8a.</b>  If write-capable or financially authorized agents are in production, describe transaction limits, approval gates, and audit-log retention.", QUESTION))
+# Q10a
+story.append(Paragraph("<b>10a.</b>  If write-capable or financially authorized agents are in production, describe transaction limits, approval gates, and audit-log retention.", QUESTION))
 story.append(AnswerBox(CONTENT_W, lines=2))
 story.append(Spacer(1, 6))
 
-# Q9
-story.extend(question(9, "Is any AI system used in any of the following? Select all that apply."))
+# Q11
+story.extend(question(11, "Is any AI system used in any of the following? Select all that apply."))
 story.append(options_grid([
     "Autonomous weapons or military targeting",
     "Social scoring or mass surveillance",
@@ -1554,7 +1582,7 @@ story.append(Paragraph("End of Application", END_APP))
 # Build doc
 # ---------------------------------------------------------------------------
 
-OUT = "pdfs/Mayflower_AI_Liability_Supplemental_Application_v4.pdf"
+OUT = "pdfs/Mayflower_AI_Liability_Supplemental_Application_v5.pdf"
 
 doc = BaseDocTemplate(
     OUT,
