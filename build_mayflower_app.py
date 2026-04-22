@@ -1429,6 +1429,7 @@ doc_rows = [
     ["Model documentation, model cards, or data sheets", "", ""],
     ["Bias audit or fairness testing results", "", ""],
     ["AI incident response plan", "", ""],
+    ["SOC 2 Type II Report or equivalent security attestation", "", ""],
     ["ISO 42001 certificate or audit report (if applicable)", "", ""],
     ["Third-party AI vendor contracts or due-diligence summaries", "", ""],
     ["Privacy impact assessments for AI systems processing PII or PHI", "", ""],
